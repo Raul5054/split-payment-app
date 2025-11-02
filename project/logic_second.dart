@@ -513,3 +513,126 @@ class GeradorRelatorios {
     return historico;
   }
 }
+
+// SERVIÇO DE GESTÃO DE DESPESAS
+class ServicoDespesas {
+  // O método principal para o fluxo de "Salvar Despesa"
+  static Despesa? criarNovaDespesa({
+    required String descricao,
+    required double valorTotal,
+    required String usuarioPagadorId,
+    required List<String> participantesIds,
+    required DateTime dataDespesa,
+    required String grupoId,
+    required TipoDivisao tipoDivisao,
+    required String categoriaNome,
+    required int totalParcelas,
+    required int parcelasPagas,
+    Map<String, double>? detalhesDivisao,
+  }) {
+    final double valorParcela = totalParcelas > 0
+        ? (valorTotal / totalParcelas)
+        : valorTotal;
+
+    if (tipoDivisao == TipoDivisao.valoresCustomizados &&
+        detalhesDivisao != null) {
+      final isValid = CalculadoraDividas.validarSomaCustomizada(
+        valorTotal,
+        detalhesDivisao,
+      );
+      if (!isValid) {
+        return null;
+      }
+    }
+
+    final novaDespesa = Despesa(
+      descricao: descricao,
+      valorTotal: valorTotal,
+      usuarioPagadorId: usuarioPagadorId,
+      participantesIds: participantesIds,
+      dataDespesa: dataDespesa,
+      grupoId: grupoId,
+      tipoDivisao: tipoDivisao,
+      categoriaNome: categoriaNome,
+      detalhesDivisao: detalhesDivisao,
+      totalParcelas: totalParcelas,
+      parcelasPagas: parcelasPagas,
+      valorParcela: valorParcela,
+    );
+
+    // 5. SALVAR NO FIREBASE (Esta etapa seria feita aqui)
+
+    return novaDespesa;
+  }
+}
+
+// SERVIÇO DE GESTÃO DE GRUPOS
+class ServicoGrupos {
+  static Grupo criarNovoGrupo({
+    required String nome,
+    required String criadorId,
+  }) {
+    // ID simulado. Em app real, seria gerado pelo Firestore.
+    final novoId = 'g_${DateTime.now().microsecondsSinceEpoch}';
+
+    final novoGrupo = Grupo(
+      id: novoId,
+      nome: nome,
+      membrosIds: [criadorId],
+      despesasIds: [],
+    );
+
+    // Etapa de salvar no Firebase/DB
+
+    return novoGrupo;
+  }
+
+  static Grupo adicionarMembro({
+    required Grupo grupoAtual,
+    required String novoMembroId,
+  }) {
+    if (grupoAtual.membrosIds.contains(novoMembroId)) {
+      return grupoAtual;
+    }
+
+    final novaListaMembros = List<String>.from(grupoAtual.membrosIds)
+      ..add(novoMembroId);
+    final grupoAtualizado = grupoAtual.copyWith(membrosIds: novaListaMembros);
+
+    // Etapa de salvar a atualização no Firebase/DB
+
+    return grupoAtualizado;
+  }
+}
+
+// SERVIÇO DE GESTÃO DE LIQUIDAÇÕES
+class ServicoLiquidacao {
+  static Liquidacao? marcarComoPago({
+    required String devedorId,
+    required String credorId,
+    required double valor,
+    String? grupoId,
+    String? metodoPagamento,
+  }) {
+    if (valor <= 0) {
+      return null;
+    }
+
+    // ID simulado
+    final novoId = 'l_${DateTime.now().microsecondsSinceEpoch}';
+
+    final novaLiquidacao = Liquidacao(
+      id: novoId,
+      devedorId: devedorId,
+      credorId: credorId,
+      valor: valor,
+      dataLiquidacao: DateTime.now(),
+      grupoId: grupoId,
+      metodoPagamento: metodoPagamento,
+    );
+    // SALVAR NO FIREBASE/DB: O registro desta Liquidação é o que
+    // faz a CalculadoraDividas atualizar o saldo na próxima consulta.
+
+    return novaLiquidacao;
+  }
+}
