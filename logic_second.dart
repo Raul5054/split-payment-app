@@ -1,27 +1,18 @@
-// FUNÇÕES AUXILIARES PARA HASHING SEGURO (Módulo 4.1)
-// Em um app real, esta função usaria uma biblioteca criptográfica como o 'bcrypt'
 String _gerarSenhaHash(String senha) {
   // Apenas uma simulação para manter o código puro.
-  // EM PRODUÇÃO, USAR ALGO COMO `Bcrypt.hash(senha, salt: Bcrypt.gensalt())`
   return 'BCRYPT_HASH_DE_VERDADE_${senha.hashCode}';
 }
 
 // ENUMS
-enum TipoDivisao { igualitaria, valoresCustomizados } // Módulo 1.2
+enum TipoDivisao { igualitaria, valoresCustomizados }
 
-enum SugestaoCategoria {
-  alimentacao,
-  transporte,
-  moradia,
-  lazer,
-  outros,
-} // Módulo 2.3
+enum SugestaoCategoria { alimentacao, transporte, moradia, lazer, outros }
 
 // =======================================================
 // MODELOS DE DADOS CENTRAIS
 // =======================================================
 
-// REPRESENTAÇÃO DE USUÁRIOS (Módulo 1.5)
+// REPRESENTAÇÃO DE USUÁRIOS
 class Usuario {
   final String id;
   final String nome;
@@ -38,7 +29,7 @@ class Usuario {
   });
 }
 
-// REPRESENTAÇÃO DE GRUPOS DE USUÁRIOS (Módulo 1.4)
+// REPRESENTAÇÃO DE GRUPOS DE USUÁRIOS
 class Grupo {
   final String id;
   final String nome;
@@ -66,7 +57,7 @@ class Grupo {
   }
 }
 
-// REPRESENTAÇÃO DE DESPESAS (Módulo 1.1) - CLASSE PURA
+// REPRESENTAÇÃO DE DESPESAS
 class Despesa {
   final String descricao;
   final double valorTotal;
@@ -76,9 +67,9 @@ class Despesa {
   final TipoDivisao tipoDivisao;
   final Map<String, double>? detalhesDivisao;
   final String grupoId;
-  final String categoriaNome; // Módulo 2.3
+  final String categoriaNome;
 
-  // CAMPOS DE PARCELAMENTO (Módulo 3.3)
+  // Campos para despesas parceladas
   final int totalParcelas;
   final int parcelasPagas;
   final double valorParcela;
@@ -129,7 +120,7 @@ class Despesa {
   }
 }
 
-// REPRESENTAÇÃO DE LIQUIDAÇÕES DE DÍVIDAS (Módulo 2.2)
+// REPRESENTAÇÃO DE LIQUIDAÇÕES DE DÍVIDAS
 class Liquidacao {
   final String id;
   final String devedorId;
@@ -150,7 +141,7 @@ class Liquidacao {
   });
 }
 
-// REPRESENTA DE TRANSAÇÕES ENTRE USUÁRIOS (Módulo 1.3)
+// REPRESENTA DE TRANSAÇÕES ENTRE USUÁRIOS
 class Transacao {
   final String devedorId;
   final String credorId;
@@ -172,7 +163,7 @@ class Transacao {
 // SERVIÇOS E LÓGICA
 // =======================================================
 
-// SERVIÇO DE AUTENTICAÇÃO (Módulo 4.1)
+// SERVIÇO DE AUTENTICAÇÃO
 class ServicoAutenticacao {
   static final List<Usuario> _databaseUsuarios = [];
 
@@ -215,9 +206,9 @@ class ServicoAutenticacao {
   }
 }
 
-// CÁLCULOS DE DÍVIDAS E DIVISÕES (Módulo 1.3, 3.3)
+// CÁLCULOS DE DÍVIDAS E DIVISÕES
 class CalculadoraDividas {
-  // Calcula as cotas de cada participante com base no tipo de divisão (Módulo 1.2)
+  // Calcula as cotas de cada participante com base no tipo de divisão
   static Map<String, double> calcularCotasPorDivisao(Despesa despesa) {
     final Map<String, double> cotas = {};
 
@@ -225,32 +216,24 @@ class CalculadoraDividas {
       return {};
     }
 
-    switch (despesa.tipoDivisao) {
-      case TipoDivisao.igualitaria:
-        final double valorCota =
-            despesa.valorTotal / despesa.participantesIds.length;
+    if (despesa.tipoDivisao case TipoDivisao.igualitaria) {
+      final double valorCota =
+          despesa.valorTotal / despesa.participantesIds.length;
+      for (final id in despesa.participantesIds) {
+        cotas[id] = valorCota;
+      }
+    } else if (despesa.tipoDivisao case TipoDivisao.valoresCustomizados) {
+      if (despesa.detalhesDivisao != null) {
         for (final id in despesa.participantesIds) {
-          cotas[id] = valorCota;
+          cotas[id] = despesa.detalhesDivisao![id] ?? 0.0;
         }
-        break;
-
-      case TipoDivisao.valoresCustomizados:
-        if (despesa.detalhesDivisao != null) {
-          for (final id in despesa.participantesIds) {
-            cotas[id] = despesa.detalhesDivisao![id] ?? 0.0;
-          }
-        }
-        break;
-      // Casos de porcentagem e itens específicos (1.2) não implementados.
-      // Adicionar um throw para segurança futura:
-      // default:
-      //  throw UnimplementedError('Tipo de divisão não suportado.');
+      }
     }
 
     return cotas;
   }
 
-  // Gera parcelas virtuais para uma despesa parcelada (Módulo 3.3)
+  // Gera parcelas virtuais para uma despesa parcelada
   static List<Despesa> gerarParcelasVirtuais(Despesa despesaOriginal) {
     final dataCorte = DateTime.now();
     final List<Despesa> parcelasVirtuais = [];
@@ -283,13 +266,12 @@ class CalculadoraDividas {
     return parcelasVirtuais;
   }
 
-  // Calcula os saldos de cada usuário, incorporando parcelas e liquidações. (Módulo 1.3)
+  // Calcula os saldos de cada usuário, incorporando parcelas e liquidações
   static Map<String, double> calcularSaldosIniciais(
     List<Despesa> despesas,
     List<Usuario> usuarios,
     List<Liquidacao> liquidacoes,
   ) {
-    // 1. CONSOLIDAÇÃO DE DESPESAS (Parceladas e não parceladas)
     final List<Despesa> despesasACalcular = [];
 
     for (var despesa in despesas) {
@@ -303,7 +285,6 @@ class CalculadoraDividas {
 
     final Map<String, double> saldos = {for (var u in usuarios) u.id: 0.0};
 
-    // 2. Processar Despesas (Reais e Virtuais)
     for (var despesa in despesasACalcular) {
       final Map<String, double> cotasDevidas = calcularCotasPorDivisao(despesa);
 
@@ -316,7 +297,6 @@ class CalculadoraDividas {
       }
     }
 
-    // 3. Processar Liquidações (Módulo 2.2)
     for (var liquidacao in liquidacoes) {
       saldos[liquidacao.credorId] =
           (saldos[liquidacao.credorId] ?? 0.0) - liquidacao.valor;
@@ -327,7 +307,7 @@ class CalculadoraDividas {
     return saldos;
   }
 
-  // Simplifica as dívidas entre usuários, retornando as transações mínimas (Módulo 1.3)
+  // Simplifica as dívidas entre usuários, retornando as transações mínimas
   static List<Transacao> simplificarDividas(
     Map<String, double> saldosIniciais,
   ) {
@@ -377,7 +357,7 @@ class CalculadoraDividas {
     return transacoes;
   }
 
-  // Valida se a soma dos valores customizados corresponde ao valor total (Módulo 1.2)
+  // Valida se a soma dos valores customizados corresponde ao valor total
   static bool validarSomaCustomizada(
     double valorTotal,
     Map<String, double> detalhesDivisao,
@@ -392,7 +372,7 @@ class CalculadoraDividas {
     return diferenca < margemErro;
   }
 
-  // Calcula o saldo de um grupo específico (Módulo 1.4)
+  // Calcula o saldo de um grupo específico
   static Map<String, double> calcularSaldoDeGrupo({
     required Grupo grupo,
     required List<Despesa> todasDespesas,
@@ -419,9 +399,8 @@ class CalculadoraDividas {
   }
 }
 
-// SERVIÇO DE NOTIFICAÇÕES (Módulo 2.1)
+// SERVIÇO DE NOTIFICAÇÕES
 class ServicoNotificacao {
-  // Lista todas as transações (dívidas) simplificadas pendentes
   static List<Transacao> listarTodasDividasPendentes({
     required List<Despesa> todasDespesas,
     required List<Usuario> todosUsuarios,
@@ -437,13 +416,10 @@ class ServicoNotificacao {
     return CalculadoraDividas.simplificarDividas(saldosAgregados);
   }
 
-  // Lista os IDs dos usuários que devem ser notificados sobre a nova despesa
   static List<String> listarUsuariosParaNotificacaoInstantanea({
     required Despesa novaDespesa,
   }) {
     final List<String> usuariosAnotificar = [];
-
-    // Removida a checagem 'notificacaoNovaDividaEnviada' que estava no modelo Despesa
 
     for (final id in novaDespesa.participantesIds) {
       final estaEnvolvido = novaDespesa.participantesIds.contains(id);
@@ -458,9 +434,8 @@ class ServicoNotificacao {
   }
 }
 
-// GERADOR DE RELATÓRIOS E MÉTRICAS (Módulo 3.2, 2.3)
+// GERADOR DE RELATÓRIOS E MÉTRICAS
 class GeradorRelatorios {
-  // Gera um relatório de despesas agrupadas por categoria. (Módulo 2.3)
   static Map<String, double> gerarRelatorioPorCategoria(
     List<Despesa> todasDespesas,
   ) {
@@ -481,7 +456,7 @@ class GeradorRelatorios {
     return relatorio;
   }
 
-  // Gera métricas de despesas por usuário em um grupo (Módulo 3.2)
+  // Gera métricas de despesas por usuário em um grupo
   static Map<String, Map<String, double>> gerarMetricasPorUsuario({
     required List<Despesa> despesasDoGrupo,
     required List<Usuario> membrosDoGrupo,
@@ -512,7 +487,7 @@ class GeradorRelatorios {
     return metricas;
   }
 
-  // Gera um histórico temporal de despesas para um grupo específico (Módulo 3.2)
+  // Gera um histórico temporal de despesas para um grupo específico
   static Map<String, double> gerarHistoricoTemporal({
     required List<Despesa> todasDespesas,
     required String grupoId,
