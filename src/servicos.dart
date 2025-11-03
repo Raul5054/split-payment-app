@@ -61,14 +61,8 @@ class ServicoDespesas {
     required String grupoId,
     required TipoDivisao tipoDivisao,
     required String categoriaNome,
-    required int totalParcelas,
-    required int parcelasPagas,
     Map<String, double>? detalhesDivisao,
   }) {
-    final double valorParcela = totalParcelas > 0
-        ? (valorTotal / totalParcelas)
-        : valorTotal;
-
     if (tipoDivisao == TipoDivisao.valoresCustomizados &&
         detalhesDivisao != null) {
       final isValid = CalculadoraDividas.validarSomaCustomizada(
@@ -90,9 +84,6 @@ class ServicoDespesas {
       tipoDivisao: tipoDivisao,
       categoriaNome: categoriaNome,
       detalhesDivisao: detalhesDivisao,
-      totalParcelas: totalParcelas,
-      parcelasPagas: parcelasPagas,
-      valorParcela: valorParcela,
     );
 
     // SALVAR NO FIREBASE

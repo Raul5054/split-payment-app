@@ -2,39 +2,6 @@ import 'modelos.dart';
 
 // CÁLCULOS DE DÍVIDAS E DIVISÕES
 class CalculadoraDividas {
-  // Gera parcelas virtuais para uma despesa parcelada
-  static List<Despesa> gerarParcelasVirtuais(Despesa despesaOriginal) {
-    final dataCorte = DateTime.now();
-    final List<Despesa> parcelasVirtuais = [];
-
-    DateTime dataParcela = despesaOriginal.dataDespesa;
-    int parcelaNum = 1;
-
-    while (parcelaNum <= despesaOriginal.totalParcelas) {
-      if (dataParcela.isAfter(dataCorte) ||
-          parcelaNum > despesaOriginal.parcelasPagas) {
-        break;
-      }
-
-      final parcelaVirtual = despesaOriginal.copyWith(
-        descricao: '${despesaOriginal.descricao} (Parc. $parcelaNum)',
-        valorTotal: despesaOriginal.valorParcela,
-        dataDespesa: dataParcela,
-      );
-
-      parcelasVirtuais.add(parcelaVirtual);
-
-      dataParcela = DateTime(
-        dataParcela.year,
-        dataParcela.month + 1,
-        dataParcela.day,
-      );
-      parcelaNum++;
-    }
-
-    return parcelasVirtuais;
-  }
-
   // Calcula as cotas de cada participante com base no tipo de divisão
   static Map<String, double> calcularCotasPorDivisao(Despesa despesa) {
     final Map<String, double> cotas = {};
@@ -66,20 +33,9 @@ class CalculadoraDividas {
     List<Usuario> usuarios,
     List<Liquidacao> liquidacoes,
   ) {
-    final List<Despesa> despesasACalcular = [];
-
-    for (var despesa in despesas) {
-      if (despesa.totalParcelas > 1) {
-        final parcelas = gerarParcelasVirtuais(despesa);
-        despesasACalcular.addAll(parcelas);
-      } else {
-        despesasACalcular.add(despesa);
-      }
-    }
-
     final Map<String, double> saldos = {for (var u in usuarios) u.id: 0.0};
 
-    for (var despesa in despesasACalcular) {
+    for (var despesa in despesas) {
       final Map<String, double> cotasDevidas = calcularCotasPorDivisao(despesa);
 
       final String pagadorId = despesa.usuarioPagadorId;

@@ -60,11 +60,6 @@ class Despesa {
   final String grupoId;
   final String categoriaNome;
 
-  // Campos para despesas parceladas
-  final int totalParcelas;
-  final int parcelasPagas;
-  final double valorParcela;
-
   Despesa({
     required this.descricao,
     required this.valorTotal,
@@ -75,9 +70,6 @@ class Despesa {
     required this.tipoDivisao,
     this.detalhesDivisao,
     required this.categoriaNome,
-    required this.totalParcelas,
-    required this.parcelasPagas,
-    required this.valorParcela,
   });
 
   Despesa copyWith({
@@ -90,9 +82,6 @@ class Despesa {
     TipoDivisao? tipoDivisao,
     Map<String, double>? detalhesDivisao,
     String? categoriaNome,
-    int? totalParcelas,
-    int? parcelasPagas,
-    double? valorParcela,
   }) {
     return Despesa(
       descricao: descricao ?? this.descricao,
@@ -104,9 +93,6 @@ class Despesa {
       tipoDivisao: tipoDivisao ?? this.tipoDivisao,
       detalhesDivisao: detalhesDivisao ?? this.detalhesDivisao,
       categoriaNome: categoriaNome ?? this.categoriaNome,
-      totalParcelas: totalParcelas ?? this.totalParcelas,
-      parcelasPagas: parcelasPagas ?? this.parcelasPagas,
-      valorParcela: valorParcela ?? this.valorParcela,
     );
   }
 }
